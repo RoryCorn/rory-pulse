@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rory's Pulse</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="theme-color" content="#15181d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a control-room board. One column of sections, each a titled card
+   grid; the window and site filters sit in one row under the masthead and
+   drive every number on the page. */
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #e9ebef;
+  --line: #d6dae1;
+  --fg: #15181d;
+  --fg-2: #555c69;
+  --fg-3: #858c9a;
+  --accent: #b86f0e;        /* the on-air lamp */
+  --accent-soft: #f6e7cf;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --bad: #d03b3b;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  --grid: rgba(21, 24, 29, 0.08);
+  --display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121417; --surface: #1b1e23; --surface-2: #23272d; --line: #30353d;
+    --fg: #f1f2f5; --fg-2: #aab0bb; --fg-3: #7c8391;
+    --accent: #e3a63a; --accent-soft: #3a2d14;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --grid: rgba(241, 242, 245, 0.09);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121417; --surface: #1b1e23; --surface-2: #23272d; --line: #30353d;
+  --fg: #f1f2f5; --fg-2: #aab0bb; --fg-3: #7c8391;
+  --accent: #e3a63a; --accent-soft: #3a2d14;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --grid: rgba(241, 242, 245, 0.09);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--body);
+  padding-block: 0 48px; padding-inline: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+.wrap { max-width: 1240px; margin: 0 auto; min-width: 0; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+h1 { font-size: 34px; line-height: 1.05; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 600; color: var(--fg); }
+.eyebrow { font: 500 11px/1.4 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3); }
+.muted { color: var(--fg-2); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* masthead + controls */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding-block: 22px 14px; }
+.top .lamp { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); margin-right: 10px; vertical-align: 3px; }
+.stamp { font-family: var(--mono); font-size: 12px; color: var(--fg-2); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding-block: 10px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; color: var(--fg-2); font: 500 13px var(--body); padding: 6px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px 4px 8px; background: var(--surface); color: var(--fg); font: 500 13px var(--body); cursor: pointer; }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--fg-3)); }
+.chip[aria-pressed="false"] { color: var(--fg-3); background: transparent; }
+.chip[aria-pressed="false"] .dot { opacity: 0.25; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 500 13px var(--body); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+.btn:hover { border-color: var(--fg-3); }
+button:focus-visible, .chip:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* status strip */
+.status { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 14px 4px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; max-width: 100%; min-width: 0; }
+.pill .ic { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; color: #fff; font: 700 11px/1 var(--body); flex: none; }
+.pill.ok .ic { background: var(--good); }
+.pill.bad .ic { background: var(--bad); }
+.pill .note { color: var(--fg-2); overflow-wrap: anywhere; }
+
+/* sections */
+section { padding-block: 26px 6px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 12px; }
+.sec-head p { margin: 0; color: var(--fg-2); font-size: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px 10px; min-width: 0; }
+.tile .v { font: 600 30px/1.05 var(--display); font-variant-numeric: tabular-nums; color: var(--fg); letter-spacing: 0.01em; }
+.tile .l { font-size: 12.5px; color: var(--fg-2); margin-top: 4px; }
+.tile .s { font-size: 12px; color: var(--fg-3); margin-top: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.grid > .wide { grid-column: 1 / -1; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 14px 10px; min-width: 0; }
+.card header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.card header p { margin: 0; font-size: 12.5px; color: var(--fg-2); }
+.plot { position: relative; height: 240px; }
+.plot.tall { height: 300px; }
+.plot canvas { max-width: 100%; }
+.empty { display: grid; place-items: center; height: 100%; color: var(--fg-3); font-size: 13.5px; text-align: center; padding: 0 12px; }
+details { margin-top: 6px; }
+summary { cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
+.tbl { overflow-x: auto; margin-top: 6px; }
+table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--fg-2); font-weight: 500; }
+
+/* ranked bar lists (countries, devices, ...) */
+.bars { display: grid; gap: 5px; }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+.bar .k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .n { font-variant-numeric: tabular-nums; color: var(--fg-2); }
+.bar .t { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.bar .t i { display: block; height: 100%; width: var(--w); background: var(--s1); border-radius: 3px; }
+.small { font-size: 12.5px; color: var(--fg-3); }
+.log { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 10px; max-height: 180px; overflow: auto; margin-top: 10px; }
+footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 70ch; }
+/* PIN gate for the published copy (the data file there is encrypted) */
+.gate { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.gate form { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 20px; width: min(360px, 100%); display: grid; gap: 12px; }
+.gate input { font: 500 24px var(--mono); letter-spacing: 0.3em; text-align: center; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); width: 100%; }
+.gate button { font: 600 15px var(--body); padding: 11px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; }
+.gate .err { color: var(--bad); font-size: 13px; min-height: 1.2em; }
+@media (max-width: 520px) { h1 { font-size: 28px; } .plot { height: 220px; } }
+@media (prefers-reduced-motion: no-preference) { .top .lamp { animation: breathe 3s ease-in-out infinite; } }
+@keyframes breathe { 50% { box-shadow: 0 0 0 7px var(--accent-soft); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Sites, apps, radio, voice agents</div>
+      <h1><span class="lamp"></span>Rory's Pulse</h1>
+    </div>
+    <div class="stamp" id="stamp">Loading data…</div>
+  </header>
+
+  <div class="controls">
+    <div class="seg" id="win" role="group" aria-label="Time window">
+      <button type="button" data-win="7">7 days</button>
+      <button type="button" data-win="30" aria-pressed="true">30 days</button>
+      <button type="button" data-win="90">90 days</button>
+      <button type="button" data-win="0">All</button>
+    </div>
+    <div class="chips" id="chips" aria-label="Sites"></div>
+    <button type="button" class="btn" id="refresh" hidden>Refresh now</button>
+    <button type="button" class="btn" id="allsites" title="Select every site">All sites</button>
+  </div>
+  <div class="log" id="refreshlog" hidden></div>
+
+  <div class="status" id="status"></div>
+
+  <section id="sec-web">
+    <div class="sec-head"><h2>Websites</h2><p>Visitors, time on site and clicks, from Umami. A visitor is one browser session; time is the span of that session.</p></div>
+    <div class="tiles" id="web-tiles"></div>
+    <div class="grid">
+      <div class="card wide"><header><h3 id="web-main-title">Visitors per day</h3>
+        <div class="seg" id="web-metric"><button type="button" data-m="visitors" aria-pressed="true">Visitors</button><button type="button" data-m="pageviews">Page views</button><button type="button" data-m="visits">Visits</button><button type="button" data-m="events">Clicks</button></div></header>
+        <div class="plot tall"><canvas id="c-web"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-web"></div></details></div>
+      <div class="card"><header><h3>Time on site</h3><p>Average minutes per visit, per day</p></header><div class="plot"><canvas id="c-time"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-time"></div></details></div>
+      <div class="card"><header><h3>Clicks per day</h3><p>Tracked button and link events</p></header><div class="plot"><canvas id="c-events"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-events"></div></details></div>
+      <div class="card"><header><h3>Countries</h3><p>Visitors in the window</p></header><div class="bars" id="b-country"></div></div>
+      <div class="card"><header><h3>Cities</h3><p>Visitors in the window</p></header><div class="bars" id="b-city"></div></div>
+      <div class="card"><header><h3>Devices</h3><p>Visitors in the window</p></header><div class="bars" id="b-device"></div></div>
+      <div class="card"><header><h3>Browsers</h3><p>Visitors in the window</p></header><div class="bars" id="b-browser"></div></div>
+      <div class="card"><header><h3>Operating systems</h3><p>Visitors in the window</p></header><div class="bars" id="b-os"></div></div>
+      <div class="card"><header><h3>Languages</h3><p>Visitors in the window</p></header><div class="bars" id="b-language"></div></div>
+      <div class="card"><header><h3>Where visitors came from</h3><p>Referrers, all time</p></header><div class="bars" id="b-referrer"></div></div>
+      <div class="card"><header><h3>Most-visited pages</h3><p>All time</p></header><div class="bars" id="b-url"></div></div>
+      <div class="card"><header><h3>What they clicked</h3><p>Event names, all time</p></header><div class="bars" id="b-event"></div></div>
+    </div>
+  </section>
+
+  <section id="sec-money">
+    <div class="sec-head"><h2>Purchases</h2><p>Sound &amp; the Body unlocks, ProxiPals donations and advertiser payments. Every one of these is a Stripe-confirmed payment.</p></div>
+    <div class="tiles" id="money-tiles"></div>
+    <div class="grid">
+      <div class="card"><header><h3>Purchases per day</h3><p>Count of confirmed payments</p></header><div class="plot"><canvas id="c-purchases"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-purchases"></div></details></div>
+      <div class="card"><header><h3>Money per day</h3><p>US dollars, before Stripe fees</p></header><div class="plot"><canvas id="c-revenue"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-revenue"></div></details></div>
+    </div>
+  </section>
+
+  <section id="sec-downloads">
+    <div class="sec-head"><h2>App downloads</h2><p>First-time downloads per day from App Store Connect sales reports.</p></div>
+    <div class="tiles" id="dl-tiles"></div>
+    <div class="grid">
+      <div class="card wide"><header><h3>Downloads per day</h3><p>One line per app</p></header><div class="plot"><canvas id="c-downloads"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-downloads"></div></details></div>
+    </div>
+  </section>
+
+  <section id="sec-voice">
+    <div class="sec-head"><h2>Voice apps</h2><p>Conversations with the ElevenLabs agents behind Shifty, Black at it! and the ProxiPals Guide.</p></div>
+    <div class="tiles" id="voice-tiles"></div>
+    <div class="grid">
+      <div class="card"><header><h3>Conversations per day</h3><p>Sessions started</p></header><div class="plot"><canvas id="c-voice"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-voice"></div></details></div>
+      <div class="card"><header><h3>Talk time per day</h3><p>Minutes of conversation</p></header><div class="plot"><canvas id="c-voice-min"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-voice-min"></div></details></div>
+    </div>
+  </section>
+
+  <section id="sec-radio">
+    <div class="sec-head"><h2>Kilocycle Radio</h2><p>Listening sessions from the station's own logs. Sessions under a minute are left out, which also removes the watchdog's checks.</p></div>
+    <div class="tiles" id="radio-tiles"></div>
+    <div class="grid">
+      <div class="card"><header><h3>Listening sessions per day</h3><p>Stream connections of a minute or more</p></header><div class="plot"><canvas id="c-radio"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-radio"></div></details></div>
+      <div class="card"><header><h3>Listening minutes per day</h3><p>Total time tuned in</p></header><div class="plot"><canvas id="c-radio-min"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-radio-min"></div></details></div>
+      <div class="card"><header><h3>Listeners right now</h3><p>Checked each time the collector runs</p></header><div class="plot"><canvas id="c-radio-now"></canvas></div></div>
+      <div class="card"><header><h3>By device</h3><p>Sessions in the window</p></header><div class="bars" id="b-rdevice"></div></div>
+      <div class="card"><header><h3>By stream</h3><p>Sessions in the window</p></header><div class="bars" id="b-rstream"></div></div>
+    </div>
+  </section>
+
+  <section id="sec-pp">
+    <div class="sec-head"><h2>ProxiPals</h2><p>Accounts and activity from the live database.</p></div>
+    <div class="tiles" id="pp-tiles"></div>
+    <div class="grid">
+      <div class="card"><header><h3>Sign-ups per day</h3><p>New accounts, and how many verified their email</p></header><div class="plot"><canvas id="c-pp"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-pp"></div></details></div>
+      <div class="card"><header><h3>Messages and ads per day</h3><p>Contact messages received, ads created</p></header><div class="plot"><canvas id="c-pp2"></canvas></div><details><summary>Table</summary><div class="tbl" id="t-pp2"></div></details></div>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  const SITE_ORDER = {
+    web: ['quantum-boss', 'synesthesia', 'sky-calendar', 'blink-i', 'sound-and-the-body', 'kilocycle'],
+    voice: ['shifty', 'black-at-it', 'proxipals-guide'],
+  };
+  const MONEY = ['satbUnlocks', 'donations', 'adPayments'];
+  const MONEY_LABEL = { satbUnlocks: 'Sound & the Body unlocks', donations: 'Donations', adPayments: 'Ad payments' };
+  const $ = (id) => document.getElementById(id);
+  let D = null, WIN = 30, selected = new Set(), webMetric = 'visitors';
+  const charts = {};
+
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const slot = (i) => css('--s' + ((i % 8) + 1));
+  function siteColor(key) {
+    for (const group of Object.values(SITE_ORDER)) { const i = group.indexOf(key); if (i >= 0) return slot(i); }
+    const all = D.sites.map((s) => s.key);
+    return slot(Math.max(0, all.indexOf(key)));
+  }
+  const siteName = (key) => (D.sites.find((s) => s.key === key) || { name: key }).name;
+  const fmt = (n, d = 0) => n === null || n === undefined || isNaN(n) ? '–' : Number(n).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const money = (n) => '$' + fmt(n, 2);
+  const mmss = (secs) => { if (!secs || !isFinite(secs)) return '0:00'; const m = Math.floor(secs / 60), s = Math.round(secs % 60); return m + ':' + String(s).padStart(2, '0'); };
+  function todayLocal() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: D.timezone }).format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function windowDays() {
+    const all = D.days.slice();
+    const today = todayLocal();
+    if (!all.length) return [];
+    const last = all[all.length - 1] > today ? all[all.length - 1] : today;
+    const first = WIN ? shiftDay(last, -(WIN - 1)) : all[0];
+    const out = [];
+    for (let d = first; d <= last; d = shiftDay(d, 1)) out.push(d);
+    return out;
+  }
+  function shiftDay(day, n) { const t = new Date(day + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+  const shortDay = (d) => { const t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }); };
+  const val = (site, metric, day) => { const m = D.daily[site] && D.daily[site][metric]; return m && day in m ? m[day] : null; };
+  const hasMetric = (site, metric) => Boolean(D.daily[site] && D.daily[site][metric] && Object.keys(D.daily[site][metric]).length);
+  function sum(site, metric, days) { let s = 0, any = false; for (const d of days) { const v = val(site, metric, d); if (v !== null) { s += v; any = true; } } return any ? s : null; }
+  const sel = (keys) => keys.filter((k) => selected.has(k));
+  const snap = (site, metric) => (D.snapshots[site] && D.snapshots[site][metric]) ? D.snapshots[site][metric].value : null;
+
+  // ---------- charts
+  function baseOptions(unit) {
+    const fg2 = css('--fg-2'), grid = css('--grid');
+    return {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: fg2, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle', font: { family: css('--body'), size: 12 } } },
+        tooltip: { callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + (unit === '$' ? money(c.parsed.y) : unit === 'min' ? fmt(c.parsed.y, 1) + ' min' : fmt(c.parsed.y)) } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: fg2, maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { family: css('--body'), size: 11 } }, border: { color: grid } },
+        y: { beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: fg2, precision: unit === '$' || unit === 'min' ? 1 : 0, font: { family: css('--mono'), size: 11 }, callback: (v) => unit === '$' ? '$' + v : v } },
+      },
+    };
+  }
+  function lineChart(id, labels, series, unit, tableId) {
+    const ctx = $(id);
+    const wrap = ctx.parentElement;
+    const anyData = series.some((s) => s.data.some((v) => v !== null));
+    let empty = wrap.querySelector('.empty');
+    if (!anyData) {
+      if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+      ctx.hidden = true;
+      if (!empty) { empty = document.createElement('div'); empty.className = 'empty'; wrap.appendChild(empty); }
+      empty.textContent = series.length ? 'No data in this window yet.' : 'Nothing connected here yet.';
+      if (tableId) $(tableId).innerHTML = '';
+      return;
+    }
+    if (empty) empty.remove();
+    ctx.hidden = false;
+    const datasets = series.map((s) => ({
+      label: s.label, data: s.data, borderColor: s.color, backgroundColor: s.color,
+      borderWidth: 2, pointRadius: labels.length > 60 ? 0 : 2, pointHoverRadius: 5, tension: 0.2, spanGaps: false,
+    }));
+    const opts = baseOptions(unit);
+    opts.plugins.legend.display = series.length > 1;
+    if (charts[id]) { charts[id].data.labels = labels; charts[id].data.datasets = datasets; charts[id].options = opts; charts[id].update(); }
+    else charts[id] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: opts });
+    if (tableId) renderTable(tableId, labels, series, unit);
+  }
+  function renderTable(id, labels, series, unit) {
+    const f = (v) => v === null ? '' : unit === '$' ? money(v) : fmt(v, unit === 'min' ? 1 : 0);
+    let h = '<table><thead><tr><th>Day</th>' + series.map((s) => '<th>' + esc(s.label) + '</th>').join('') + '</tr></thead><tbody>';
+    for (let i = labels.length - 1; i >= 0; i--) h += '<tr><td>' + esc(labels[i]) + '</td>' + series.map((s) => '<td>' + f(s.data[i]) + '</td>').join('') + '</tr>';
+    $(id).innerHTML = h + '</tbody></table>';
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function bars(id, pairs, color) {
+    const el = $(id);
+    pairs = pairs.filter((p) => p[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 12);
+    if (!pairs.length) { el.innerHTML = '<div class="small">Nothing yet.</div>'; return; }
+    const max = pairs[0][1];
+    el.innerHTML = pairs.map((p) => '<div class="bar"><span class="k" title="' + esc(p[0]) + '">' + esc(p[0]) + '</span><span class="n">' + fmt(p[1]) + '</span><span class="t"><i style="--w:' + (100 * p[1] / max).toFixed(1) + '%;background:' + (color || css('--s1')) + '"></i></span></div>').join('');
+  }
+  function tiles(id, items) {
+    $(id).innerHTML = items.map((t) => '<div class="tile"><div class="v">' + t.v + '</div><div class="l">' + esc(t.l) + '</div>' + (t.s ? '<div class="s">' + esc(t.s) + '</div>' : '') + '</div>').join('');
+  }
+  function dimTotals(sites, metric, dim, days) {
+    const acc = {};
+    for (const site of sites) {
+      const d = D.dims[site] && D.dims[site][metric] && D.dims[site][metric][dim];
+      if (!d) continue;
+      for (const key in d) for (const day of days) if (day in d[key]) acc[key] = (acc[key] || 0) + d[key][day];
+    }
+    return Object.entries(acc);
+  }
+  function topTotals(sites, dim) {
+    const acc = {};
+    for (const site of sites) for (const [k, v] of (D.top[site] && D.top[site][dim]) || []) acc[k] = (acc[k] || 0) + v;
+    return Object.entries(acc);
+  }
+
+  // ---------- sections
+  function renderStatus() {
+    const order = ['umami', 'elevenlabs', 'kilocycle', 'proxipals', 'asc', 'stripe'];
+    $('status').innerHTML = order.map((k) => {
+      const s = D.sources[k]; if (!s) return '';
+      const ok = s.ok && !(s.recent_failures && s.recent_failures.length);
+      const when = s.ts ? new Date(s.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never';
+      const note = ok ? when : (s.note || (s.recent_failures || [])[0] || 'failed');
+      return '<span class="pill ' + (ok ? 'ok' : 'bad') + '" title="' + esc(s.note || '') + '"><span class="ic" aria-hidden="true">' + (ok ? '✓' : '!') + '</span><span><strong>' + esc(s.label) + '</strong> <span class="note">' + (ok ? 'checked ' : '') + esc(note) + '</span></span></span>';
+    }).join('');
+  }
+  function renderWeb(days) {
+    const sites = sel(SITE_ORDER.web.filter((k) => hasMetric(k, 'visitors')).concat(D.sites.map((s) => s.key).filter((k) => !SITE_ORDER.web.includes(k) && hasMetric(k, 'visitors'))));
+    const tot = (m) => sites.reduce((a, s) => a + (sum(s, m, days) || 0), 0);
+    const visitors = tot('visitors'), views = tot('pageviews'), visits = tot('visits'), events = tot('events'), time = tot('time_s'), bounces = tot('bounces');
+    tiles('web-tiles', [
+      { v: fmt(visitors), l: 'visitors', s: WIN ? 'last ' + WIN + ' days' : 'all time' },
+      { v: fmt(views), l: 'page views' },
+      { v: mmss(visits ? time / visits : 0), l: 'average time per visit', s: 'minutes:seconds' },
+      { v: fmt(events), l: 'clicks (tracked events)' },
+      { v: visitors ? Math.round(100 * bounces / visitors) + '%' : '–', l: 'bounce rate', s: 'single-page visits' },
+    ]);
+    const labels = days.map(shortDay);
+    const mk = (metric, transform) => sites.map((s) => ({ label: siteName(s), color: siteColor(s), data: days.map((d) => transform ? transform(s, d) : val(s, metric, d)) }));
+    const titles = { visitors: 'Visitors per day', pageviews: 'Page views per day', visits: 'Visits per day', events: 'Clicks per day' };
+    $('web-main-title').textContent = titles[webMetric];
+    lineChart('c-web', labels, mk(webMetric), '', 't-web');
+    lineChart('c-time', labels, mk(null, (s, d) => { const v = val(s, 'visits', d), t = val(s, 'time_s', d); return v === null ? null : v ? Math.round(10 * t / v / 60) / 10 : 0; }), 'min', 't-time');
+    lineChart('c-events', labels, mk('events'), '', 't-events');
+    for (const dim of ['country', 'city', 'device', 'browser', 'os', 'language']) bars('b-' + dim, dimTotals(sites, 'visitors', dim, days));
+    bars('b-referrer', topTotals(sites, 'referrer'), css('--s7'));
+    bars('b-url', topTotals(sites, 'path').concat(topTotals(sites, 'url')), css('--s7'));
+    bars('b-event', topTotals(sites, 'event'), css('--s7'));
+  }
+  function renderMoney(days) {
+    const pp = 'proxipals';
+    const on = selected.has(pp) || selected.has('sound-and-the-body');
+    const satb = on ? sum(pp, 'satbUnlocks', days) || 0 : 0;
+    const don = on ? sum(pp, 'donations', days) || 0 : 0, donAmt = on ? sum(pp, 'donationsAmount', days) || 0 : 0;
+    const ads = on ? sum(pp, 'adPayments', days) || 0 : 0, adAmt = on ? sum(pp, 'adRevenue', days) || 0 : 0;
+    const satbAmt = satb * 1.99;
+    const t = [
+      { v: fmt(satb), l: 'Sound & the Body unlocks', s: money(satbAmt) + ' at $1.99' },
+      { v: money(donAmt), l: 'donations', s: fmt(don) + ' gift' + (don === 1 ? '' : 's') },
+      { v: money(adAmt), l: 'advertiser payments', s: fmt(ads) + ' payment' + (ads === 1 ? '' : 's') },
+      { v: money(satbAmt + donAmt + adAmt), l: 'total', s: WIN ? 'last ' + WIN + ' days' : 'all time' },
+    ];
+    if (hasMetric('stripe', 'charges')) t.push({ v: money(sum('stripe', 'amount_usd', days) || 0), l: 'Stripe charges', s: fmt(sum('stripe', 'charges', days) || 0) + ' succeeded' });
+    tiles('money-tiles', t);
+    const labels = days.map(shortDay);
+    lineChart('c-purchases', labels, on ? MONEY.map((m, i) => ({ label: MONEY_LABEL[m], color: slot(i), data: days.map((d) => val(pp, m, d)) })) : [], '', 't-purchases');
+    lineChart('c-revenue', labels, on ? [
+      { label: 'Sound & the Body', color: slot(0), data: days.map((d) => { const v = val(pp, 'satbUnlocks', d); return v === null ? null : Math.round(v * 199) / 100; }) },
+      { label: 'Donations', color: slot(1), data: days.map((d) => val(pp, 'donationsAmount', d)) },
+      { label: 'Ad payments', color: slot(2), data: days.map((d) => val(pp, 'adRevenue', d)) },
+    ] : [], '$', 't-revenue');
+  }
+  function renderDownloads(days) {
+    const apps = sel(D.sites.map((s) => s.key).filter((k) => hasMetric(k, 'downloads')));
+    const src = D.sources.asc || {};
+    if (!apps.length) {
+      tiles('dl-tiles', [{ v: '–', l: 'downloads', s: src.ok ? 'no app reported sales yet' : (src.note || 'App Store Connect is not connected') }]);
+      lineChart('c-downloads', days.map(shortDay), [], '', 't-downloads');
+      return;
+    }
+    const t = apps.map((a) => ({ v: fmt(sum(a, 'downloads', days) || 0), l: siteName(a) + ' downloads', s: fmt(sum(a, 'updates', days) || 0) + ' updates, ' + fmt(sum(a, 'iap_units', days) || 0) + ' in-app purchases' }));
+    t.push({ v: money(apps.reduce((s, a) => s + (sum(a, 'proceeds', days) || 0), 0)), l: 'proceeds (USD)' });
+    tiles('dl-tiles', t);
+    lineChart('c-downloads', days.map(shortDay), apps.map((a, i) => ({ label: siteName(a), color: slot(i), data: days.map((d) => val(a, 'downloads', d)) })), '', 't-downloads');
+  }
+  function renderVoice(days) {
+    const agents = sel(SITE_ORDER.voice.filter((k) => hasMetric(k, 'conversations')));
+    const t = agents.map((a) => { const n = sum(a, 'conversations', days) || 0, m = sum(a, 'minutes', days) || 0, f = sum(a, 'failed', days) || 0; return { v: fmt(n), l: siteName(a) + ' conversations', s: fmt(m, 0) + ' min, avg ' + (n ? fmt(m / n, 1) : '0') + ' min' + (f ? ', ' + f + ' failed' : '') }; });
+    const chars = snap('elevenlabs', 'characters_used'), lim = snap('elevenlabs', 'characters_limit');
+    if (chars !== null) t.push({ v: fmt(chars), l: 'ElevenLabs characters used this cycle', s: 'of ' + fmt(lim) });
+    tiles('voice-tiles', t.length ? t : [{ v: '–', l: 'no voice data yet' }]);
+    const labels = days.map(shortDay);
+    lineChart('c-voice', labels, agents.map((a) => ({ label: siteName(a), color: siteColor(a), data: days.map((d) => val(a, 'conversations', d)) })), '', 't-voice');
+    lineChart('c-voice-min', labels, agents.map((a) => ({ label: siteName(a), color: siteColor(a), data: days.map((d) => val(a, 'minutes', d)) })), 'min', 't-voice-min');
+  }
+  function renderRadio(days) {
+    const k = 'kilocycle';
+    const on = selected.has(k);
+    const sessions = on ? sum(k, 'listener_sessions', days) : null, minutes = on ? sum(k, 'listening_minutes', days) : null;
+    let peak = null; if (on) for (const d of days) { const v = val(k, 'listeners_peak_observed', d); if (v !== null) peak = Math.max(peak || 0, v); }
+    const nowS = D.snapshots[k] && D.snapshots[k].listeners_now;
+    tiles('radio-tiles', [
+      { v: nowS ? fmt(nowS.value) : '–', l: 'listening now', s: nowS ? 'as of ' + new Date(nowS.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '' },
+      { v: fmt(sessions), l: 'listening sessions', s: WIN ? 'last ' + WIN + ' days' : 'all time' },
+      { v: fmt(minutes), l: 'minutes listened', s: sessions ? 'avg ' + fmt(minutes / sessions, 1) + ' min per session' : '' },
+      { v: fmt(peak), l: 'most listeners at once', s: 'highest count seen by the collector' },
+    ]);
+    const labels = days.map(shortDay);
+    lineChart('c-radio', labels, on ? [{ label: 'Sessions', color: siteColor(k), data: days.map((d) => val(k, 'listener_sessions', d)) }] : [], '', 't-radio');
+    lineChart('c-radio-min', labels, on ? [{ label: 'Minutes', color: siteColor(k), data: days.map((d) => val(k, 'listening_minutes', d)) }] : [], 'min', 't-radio-min');
+    const g = (D.gauges[k] && D.gauges[k].listeners_now) || [];
+    const gl = g.map((p) => new Date(p[0]).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric' }));
+    lineChart('c-radio-now', gl, on && g.length ? [{ label: 'Listeners', color: siteColor(k), data: g.map((p) => p[1]) }] : [], '');
+    bars('b-rdevice', on ? dimTotals([k], 'listener_sessions', 'device', days) : [], siteColor(k));
+    bars('b-rstream', on ? dimTotals([k], 'listener_sessions', 'stream', days) : [], siteColor(k));
+  }
+  function renderPP(days) {
+    const k = 'proxipals', on = selected.has(k);
+    const s = (m) => snap(k, m);
+    tiles('pp-tiles', [
+      { v: fmt(s('users')), l: 'accounts', s: fmt(s('verified')) + ' verified, ' + fmt(s('deleted')) + ' deleted' },
+      { v: fmt(s('active7d')), l: 'active in the last 7 days', s: fmt(s('active1d')) + ' today, ' + fmt(s('active30d')) + ' this month' },
+      { v: fmt(on ? sum(k, 'signups', days) : null), l: 'sign-ups', s: WIN ? 'last ' + WIN + ' days' : 'all time' },
+      { v: fmt(s('signedInSessions')), l: 'signed-in sessions' },
+      { v: fmt(s('contactMessages')), l: 'contact messages, all time' },
+      { v: fmt(s('advertisers')), l: 'active advertisers', s: fmt(s('ads')) + ' ads, ' + fmt(s('adClicks')) + ' ad clicks' },
+    ]);
+    const labels = days.map(shortDay);
+    lineChart('c-pp', labels, on ? [
+      { label: 'Sign-ups', color: siteColor(k), data: days.map((d) => val(k, 'signups', d)) },
+      { label: 'Verified', color: slot(2), data: days.map((d) => val(k, 'signupsVerified', d)) },
+    ] : [], '', 't-pp');
+    lineChart('c-pp2', labels, on ? [
+      { label: 'Contact messages', color: slot(1), data: days.map((d) => val(k, 'contactMessages', d)) },
+      { label: 'Ads created', color: slot(3), data: days.map((d) => val(k, 'adsCreated', d)) },
+    ] : [], '', 't-pp2');
+  }
+  function render() {
+    const days = windowDays();
+    renderStatus(); renderWeb(days); renderMoney(days); renderDownloads(days); renderVoice(days); renderRadio(days); renderPP(days);
+    const gen = new Date(D.generatedAt);
+    $('stamp').textContent = 'Data as of ' + gen.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' · days in ' + D.timezone + ' · today is partial';
+    $('foot').innerHTML = 'Collected by <code>pulse.py</code> from Umami, ElevenLabs, the Kilocycle station, the ProxiPals database and App Store Connect, kept in <code>data/pulse.sqlite</code>. Counts only: no visitor is identified. Windows end today; the current day is still filling in.';
+  }
+
+  // ---------- controls
+  function initControls() {
+    $('win').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; WIN = Number(b.dataset.win); for (const x of $('win').querySelectorAll('button')) x.setAttribute('aria-pressed', x === b); save(); render(); });
+    $('web-metric').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; webMetric = b.dataset.m; for (const x of $('web-metric').querySelectorAll('button')) x.setAttribute('aria-pressed', x === b); renderWeb(windowDays()); });
+    const chips = $('chips');
+    chips.innerHTML = D.sites.map((s) => '<button type="button" class="chip" data-key="' + esc(s.key) + '" aria-pressed="true" style="--c:' + siteColor(s.key) + '"><span class="dot"></span>' + esc(s.name) + '</button>').join('');
+    chips.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; const k = b.dataset.key; if (selected.has(k)) selected.delete(k); else selected.add(k); b.setAttribute('aria-pressed', selected.has(k)); save(); render(); });
+    $('allsites').addEventListener('click', () => { for (const s of D.sites) selected.add(s.key); for (const b of chips.querySelectorAll('.chip')) b.setAttribute('aria-pressed', 'true'); save(); render(); });
+    const local = ['127.0.0.1', 'localhost'].includes(location.hostname);
+    if (local) {
+      $('refresh').hidden = false;
+      $('refresh').addEventListener('click', async () => {
+        const b = $('refresh'); b.disabled = true; b.textContent = 'Collecting… (about a minute)';
+        const box = $('refreshlog'); box.hidden = false; box.textContent = 'Reading every source…';
+        try { const r = await (await fetch('/refresh')).json(); box.textContent = r.output || (r.ok ? 'Done.' : 'Failed.'); await load(false); }
+        catch (e) { box.textContent = 'Refresh failed: ' + e; }
+        b.disabled = false; b.textContent = 'Refresh now';
+      });
+    }
+    try { const m = window.matchMedia('(prefers-color-scheme: dark)'); m.addEventListener('change', () => { for (const k in charts) { charts[k].destroy(); delete charts[k]; } render(); }); } catch (e) {}
+  }
+  function save() { try { localStorage.setItem('pulse.ui', JSON.stringify({ win: WIN, sites: [...selected] })); } catch (e) {} }
+  function restore() {
+    try {
+      const s = JSON.parse(localStorage.getItem('pulse.ui') || 'null');
+      if (!s) return;
+      if (typeof s.win === 'number') { WIN = s.win; for (const x of $('win').querySelectorAll('button')) x.setAttribute('aria-pressed', Number(x.dataset.win) === WIN); }
+      if (Array.isArray(s.sites) && s.sites.length) { selected = new Set(s.sites.filter((k) => D.sites.some((x) => x.key === k))); for (const b of $('chips').querySelectorAll('.chip')) b.setAttribute('aria-pressed', selected.has(b.dataset.key)); }
+    } catch (e) {}
+  }
+  // ---------- the published copy ships data.enc (openssl aes-256-cbc, pbkdf2 200000, sha256) and asks for a PIN
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  async function decrypt(buf, pin) {
+    const bytes = new Uint8Array(buf);
+    if (bytes.length < 32 || String.fromCharCode(...bytes.slice(0, 8)) !== 'Salted__') throw new Error('not an encrypted file');
+    const salt = bytes.slice(8, 16), body = bytes.slice(16);
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, 384));
+    const key = await crypto.subtle.importKey('raw', bits.slice(0, 32), { name: 'AES-CBC' }, false, ['decrypt']);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: bits.slice(32, 48) }, key, body);
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  function askPin(message) {
+    return new Promise((resolve) => {
+      let gate = $('gate');
+      if (!gate) {
+        gate = document.createElement('div'); gate.className = 'gate'; gate.id = 'gate';
+        gate.innerHTML = '<form><div class="eyebrow">Rory\'s Pulse</div><h2>Enter the PIN</h2><input id="pin" type="password" inputmode="numeric" autocomplete="off" aria-label="PIN"><div class="err" id="pinerr"></div><button type="submit">Open</button></form>';
+        document.body.appendChild(gate);
+      }
+      $('pinerr').textContent = message || '';
+      $('pin').value = '';
+      setTimeout(() => $('pin').focus(), 50);
+      gate.querySelector('form').onsubmit = (e) => { e.preventDefault(); resolve($('pin').value.trim()); };
+    });
+  }
+  async function loadEncrypted() {
+    const r = await fetch('data.enc?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('data.enc ' + r.status);
+    const buf = await r.arrayBuffer();
+    let pin = null;
+    try { pin = localStorage.getItem('pulse.pin'); } catch (e) {}
+    let message = '';
+    for (;;) {
+      if (!pin) pin = await askPin(message);
+      try {
+        const data = await decrypt(buf, pin);
+        try { localStorage.setItem('pulse.pin', pin); } catch (e) {}
+        const gate = $('gate'); if (gate) gate.remove();
+        return data;
+      } catch (e) { message = 'That PIN did not open it. Try again.'; pin = null; }
+    }
+  }
+  async function load(first) {
+    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) D = await r.json();
+    else D = await loadEncrypted();
+    if (first) { selected = new Set(D.sites.map((s) => s.key)); initControls(); restore(); }
+    render();
+  }
+  load(true).catch((e) => { $('stamp').textContent = 'Could not load the data (' + e.message + ').'; });
+})();
+</script>
+</body>
+</html>
