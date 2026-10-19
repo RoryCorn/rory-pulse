@@ -527,13 +527,20 @@ footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 
     }
     try { const m = window.matchMedia('(prefers-color-scheme: dark)'); m.addEventListener('change', () => { for (const k in charts) { charts[k].destroy(); delete charts[k]; } render(); }); } catch (e) {}
   }
-  function save() { try { localStorage.setItem('pulse.ui', JSON.stringify({ win: WIN, sites: [...selected] })); } catch (e) {} }
+  // `known` lists every site the page had when the choice was saved, so a site
+  // added later starts switched on instead of hidden by an old choice
+  function save() { try { localStorage.setItem('pulse.ui', JSON.stringify({ win: WIN, sites: [...selected], known: D.sites.map((x) => x.key) })); } catch (e) {} }
   function restore() {
     try {
       const s = JSON.parse(localStorage.getItem('pulse.ui') || 'null');
       if (!s) return;
       if (typeof s.win === 'number') { WIN = s.win; for (const x of $('win').querySelectorAll('button')) x.setAttribute('aria-pressed', Number(x.dataset.win) === WIN); }
-      if (Array.isArray(s.sites) && s.sites.length) { selected = new Set(s.sites.filter((k) => D.sites.some((x) => x.key === k))); for (const b of $('chips').querySelectorAll('.chip')) b.setAttribute('aria-pressed', selected.has(b.dataset.key)); }
+      if (Array.isArray(s.sites) && s.sites.length) {
+        // choices saved before `known` existed predate the GETM12 store
+        const known = new Set(Array.isArray(s.known) ? s.known : D.sites.map((x) => x.key).filter((k) => k !== 'getm12'));
+        selected = new Set(D.sites.map((x) => x.key).filter((k) => s.sites.includes(k) || !known.has(k)));
+        for (const b of $('chips').querySelectorAll('.chip')) b.setAttribute('aria-pressed', selected.has(b.dataset.key));
+      }
     } catch (e) {}
   }
   // ---------- the published copy ships data.enc (openssl aes-256-cbc, pbkdf2 200000, sha256) and asks for a PIN
