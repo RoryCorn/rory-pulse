@@ -413,7 +413,8 @@ footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 
       { v: money(donAmt), l: 'donations', s: fmt(don) + ' gift' + (don === 1 ? '' : 's') },
       { v: money(adAmt), l: 'advertiser payments', s: fmt(ads) + ' payment' + (ads === 1 ? '' : 's') },
     ];
-    if (storeOn) t.push({ v: money(storeAmt), l: 'GETM12 song sales', s: fmt(storeOrders) + ' order' + (storeOrders === 1 ? '' : 's') + ', ' + fmt(sum(st, 'songs_sold', days) || 0) + ' songs, ' + fmt(sum(st, 'downloads', days) || 0) + ' downloads' });
+    const plural = (n, w) => fmt(n) + ' ' + w + (n === 1 ? '' : 's');
+    if (storeOn) t.push({ v: money(storeAmt), l: 'GETM12 song sales', s: plural(storeOrders, 'order') + ', ' + plural(sum(st, 'songs_sold', days) || 0, 'song') + ', ' + plural(sum(st, 'paid_downloads', days) || 0, 'download') });
     t.push({ v: money(satbAmt + donAmt + adAmt + storeAmt), l: 'total', s: WIN ? 'last ' + WIN + ' days' : 'all time' });
     if (hasMetric('stripe', 'charges')) t.push({ v: money(sum('stripe', 'amount_usd', days) || 0), l: 'Stripe charges', s: fmt(sum('stripe', 'charges', days) || 0) + ' succeeded' });
     tiles('money-tiles', t);
@@ -428,7 +429,7 @@ footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 
     ] : []).concat(storeOn ? [{ label: 'GETM12 store', color: storeColor, data: days.map((d) => val(st, 'revenue_usd', d)) }] : []), '$', 't-revenue');
     lineChart('c-store', labels, storeOn ? [
       { label: 'Songs sold', color: storeColor, data: days.map((d) => val(st, 'songs_sold', d)) },
-      { label: 'Downloads', color: slot(6), data: days.map((d) => val(st, 'downloads', d)) },
+      { label: 'Downloads', color: slot(6), data: days.map((d) => val(st, 'paid_downloads', d)) },
     ] : [], '', 't-store');
     bars('b-songs', storeOn ? dimTotals([st], 'songs_sold', 'song', days) : [], storeColor);
   }
@@ -502,7 +503,7 @@ footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 
     renderStatus(); renderWeb(days); renderMoney(days); renderDownloads(days); renderVoice(days); renderRadio(days); renderPP(days);
     const gen = new Date(D.generatedAt);
     $('stamp').textContent = 'Data as of ' + gen.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' · days in ' + D.timezone + ' · today is partial';
-    $('foot').innerHTML = 'Collected by <code>pulse.py</code> from Umami, ElevenLabs, the Kilocycle station, the ProxiPals database, App Store Connect and the GETM12 store's WooCommerce orders, kept in <code>data/pulse.sqlite</code>. Counts only: no visitor is identified. Windows end today; the current day is still filling in.';
+    $('foot').innerHTML = 'Collected by <code>pulse.py</code> from Umami, ElevenLabs, the Kilocycle station, the ProxiPals database, App Store Connect and the GETM12 store\'s WooCommerce orders, kept in <code>data/pulse.sqlite</code>. Counts only: no visitor is identified. Windows end today; the current day is still filling in.';
   }
 
   // ---------- controls
