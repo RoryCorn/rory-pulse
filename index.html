@@ -416,7 +416,13 @@ footer { padding-block: 30px 0; color: var(--fg-2); font-size: 13px; max-width: 
     const plural = (n, w) => fmt(n) + ' ' + w + (n === 1 ? '' : 's');
     if (storeOn) t.push({ v: money(storeAmt), l: 'GETM12 song sales', s: plural(storeOrders, 'order') + ', ' + plural(sum(st, 'songs_sold', days) || 0, 'song') + ', ' + plural(sum(st, 'paid_downloads', days) || 0, 'download') });
     t.push({ v: money(satbAmt + donAmt + adAmt + storeAmt), l: 'total', s: WIN ? 'last ' + WIN + ' days' : 'all time' });
-    if (hasMetric('stripe', 'charges')) t.push({ v: money(sum('stripe', 'amount_usd', days) || 0), l: 'Stripe charges', s: fmt(sum('stripe', 'charges', days) || 0) + ' succeeded' });
+    // Stripe across both accounts: Sound & the Body from its Stripe key, the GETM12 store from its own
+    // Stripe-paid orders (Pulse has no key for the store's Stripe account)
+    const storeStripe = storeOn ? sum(st, 'stripe_usd', days) || 0 : 0, storeStripeN = storeOn ? sum(st, 'stripe_charges', days) || 0 : 0;
+    if (hasMetric('stripe', 'charges') || storeStripeN) {
+      const satbStripe = sum('stripe', 'amount_usd', days) || 0, satbStripeN = sum('stripe', 'charges', days) || 0;
+      t.push({ v: money(satbStripe + storeStripe), l: 'Stripe charges', s: plural(satbStripeN + storeStripeN, 'charge') + ' · Sound & the Body ' + money(satbStripe) + ', GETM12 store ' + money(storeStripe) + (storeOn ? ' (Stripe fees ' + money(sum(st, 'stripe_fee_usd', days) || 0) + ')' : '') });
+    }
     tiles('money-tiles', t);
     const labels = days.map(shortDay);
     const storeColor = siteColor(st);
